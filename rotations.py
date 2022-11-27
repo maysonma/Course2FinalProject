@@ -4,12 +4,14 @@
 # University of Toronto Institute for Aerospace Studies
 import numpy as np
 
+
 def angle_normalize(a):
     """Normalize angles to lie in range -pi < a[i] <= pi."""
-    a = np.remainder(a, 2*np.pi)
-    a[a <= -np.pi] += 2*np.pi
-    a[a  >  np.pi] -= 2*np.pi
+    a = np.remainder(a, 2 * np.pi)
+    a[a <= -np.pi] += 2 * np.pi
+    a[a > np.pi] -= 2 * np.pi
     return a
+
 
 def skew_symmetric(v):
     """Skew symmetric form of a 3x1 vector."""
@@ -18,28 +20,30 @@ def skew_symmetric(v):
          [v[2], 0, -v[0]],
          [-v[1], v[0], 0]], dtype=np.float64)
 
+
 def rpy_jacobian_axis_angle(a):
     """Jacobian of RPY Euler angles with respect to axis-angle vector."""
     if not (type(a) == np.ndarray and len(a) == 3):
         raise ValueError("'a' must be a np.ndarray with length 3.")
     # From three-parameter representation, compute u and theta.
-    na  = np.sqrt(a @ a)
-    na3 = na**3
+    na = np.sqrt(a @ a)
+    na3 = na ** 3
     t = np.sqrt(a @ a)
-    u = a/t
+    u = a / t
 
     # First-order approximation of Jacobian wrt u, t.
-    Jr = np.array([[t/(t**2*u[0]**2 + 1), 0, 0, u[0]/(t**2*u[0]**2 + 1)], 
-                   [0, t/np.sqrt(1 - t**2*u[1]**2), 0, u[1]/np.sqrt(1 - t**2*u[1]**2)], 
-                   [0, 0, t/(t**2*u[2]**2 + 1), u[2]/(t**2*u[2]**2 + 1)]])
+    Jr = np.array([[t / (t ** 2 * u[0] ** 2 + 1), 0, 0, u[0] / (t ** 2 * u[0] ** 2 + 1)],
+                   [0, t / np.sqrt(1 - t ** 2 * u[1] ** 2), 0, u[1] / np.sqrt(1 - t ** 2 * u[1] ** 2)],
+                   [0, 0, t / (t ** 2 * u[2] ** 2 + 1), u[2] / (t ** 2 * u[2] ** 2 + 1)]])
 
     # Jacobian of u, t wrt a.
-    Ja = np.array([[(a[1]**2 + a[2]**2)/na3,        -(a[0]*a[1])/na3,        -(a[0]*a[2])/na3],
-                   [       -(a[0]*a[1])/na3, (a[0]**2 + a[2]**2)/na3,        -(a[1]*a[2])/na3], 
-                   [       -(a[0]*a[2])/na3,        -(a[1]*a[2])/na3, (a[0]**2 + a[1]**2)/na3],    
-                   [                a[0]/na,                 a[1]/na,                 a[2]/na]])
+    Ja = np.array([[(a[1] ** 2 + a[2] ** 2) / na3, -(a[0] * a[1]) / na3, -(a[0] * a[2]) / na3],
+                   [-(a[0] * a[1]) / na3, (a[0] ** 2 + a[2] ** 2) / na3, -(a[1] * a[2]) / na3],
+                   [-(a[0] * a[2]) / na3, -(a[1] * a[2]) / na3, (a[0] ** 2 + a[1] ** 2) / na3],
+                   [a[0] / na, a[1] / na, a[2] / na]])
 
     return Jr @ Ja
+
 
 class Quaternion():
     def __init__(self, w=1., x=0., y=0., z=0., axis_angle=None, euler=None):
@@ -104,19 +108,19 @@ class Quaternion():
         return "Quaternion (wxyz): [%2.5f, %2.5f, %2.5f, %2.5f]" % (self.w, self.x, self.y, self.z)
 
     def to_axis_angle(self):
-        t = 2*np.arccos(self.w)
-        return np.array(t*np.array([self.x, self.y, self.z])/np.sin(t/2))
+        t = 2 * np.arccos(self.w)
+        return np.array(t * np.array([self.x, self.y, self.z]) / np.sin(t / 2))
 
     def to_mat(self):
-        v = np.array([self.x, self.y, self.z]).reshape(3,1)
+        v = np.array([self.x, self.y, self.z]).reshape(3, 1)
         return (self.w ** 2 - np.dot(v.T, v)) * np.eye(3) + \
                2 * np.dot(v, v.T) + 2 * self.w * skew_symmetric(v)
 
     def to_euler(self):
         """Return as xyz (roll pitch yaw) Euler angles."""
-        roll = np.arctan2(2 * (self.w * self.x + self.y * self.z), 1 - 2 * (self.x**2 + self.y**2))
+        roll = np.arctan2(2 * (self.w * self.x + self.y * self.z), 1 - 2 * (self.x ** 2 + self.y ** 2))
         pitch = np.arcsin(2 * (self.w * self.y - self.z * self.x))
-        yaw = np.arctan2(2 * (self.w * self.z + self.x * self.y), 1 - 2 * (self.y**2 + self.z**2))
+        yaw = np.arctan2(2 * (self.w * self.z + self.x * self.y), 1 - 2 * (self.y ** 2 + self.z ** 2))
         return np.array([roll, pitch, yaw])
 
     def to_numpy(self):
@@ -138,9 +142,9 @@ class Quaternion():
         :return: Returns quaternion of desired type.
         """
         v = np.array([self.x, self.y, self.z]).reshape(3, 1)
-        sum_term = np.zeros([4,4])
-        sum_term[0,1:] = -v[:,0]
-        sum_term[1:, 0] = v[:,0]
+        sum_term = np.zeros([4, 4])
+        sum_term[0, 1:] = -v[:, 0]
+        sum_term[1:, 0] = v[:, 0]
         sum_term[1:, 1:] = -skew_symmetric(v)
         sigma = self.w * np.eye(4) + sum_term
 
@@ -165,9 +169,9 @@ class Quaternion():
         :return: Returns quaternion of desired type.
         """
         v = np.array([self.x, self.y, self.z]).reshape(3, 1)
-        sum_term = np.zeros([4,4])
-        sum_term[0,1:] = -v[:,0]
-        sum_term[1:, 0] = v[:,0]
+        sum_term = np.zeros([4, 4])
+        sum_term[0, 1:] = -v[:, 0]
+        sum_term[1:, 0] = v[:, 0]
         sum_term[1:, 1:] = skew_symmetric(v)
         sigma = self.w * np.eye(4) + sum_term
 
